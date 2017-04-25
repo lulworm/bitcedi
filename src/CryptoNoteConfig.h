@@ -119,6 +119,7 @@ const char     P2P_STAT_TRUSTED_PUB_KEY[]                    = "85ae8734f90bc1ee
 const std::initializer_list<const char*> SEED_NODES = {
    "seed0.bitcedi.org:55008",
    "seed1.bitcedi.org:55008",
+   "seed2.bitcedi.org:55008"
 };
 
 struct CheckpointData {
