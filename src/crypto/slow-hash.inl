@@ -19,31 +19,22 @@
     static const uint32_t table = 0x75310; \
     const uint8_t index = (((tmp >> 3) & 6) | (tmp & 1)) << 1; \
     ((uint8_t*)(p))[11] = tmp ^ ((table >> index) & 0x30); \
-  } while(0);
+  } while(0)
 
 #define VARIANT1_2(p) \
   do if (variant > 0) \
   { \
     xor64(p, tweak1_2); \
-  } while(0);
+  } while(0)
 
 #define VARIANT1_CHECK() \
   do if (length < 43) \
   { \
-    fprintf(stderr, "Cryptonight variants need at least 43 bytes of data. Exiting."); \
-    _exit(1); \
-  } while(0);
+    printf("Cryptonight variants need at least 43 bytes of data"); \
+    exit(1); \
+  } while(0)
 
 #define NONCE_POINTER (((const uint8_t*)data)+35)
-
-#define VARIANT1_PORTABLE_INIT() \
-  uint8_t tweak1_2[8]; \
-  do if (variant > 0) \
-  { \
-    VARIANT1_CHECK(); \
-    memcpy(&tweak1_2, &state.hs.b[192], sizeof(tweak1_2)); \
-    xor64(tweak1_2, NONCE_POINTER); \
-  } while(0)
 
 #define VARIANT1_INIT64() \
   if (variant > 0) \
@@ -51,7 +42,6 @@
     VARIANT1_CHECK(); \
   } \
   const uint64_t tweak1_2 = variant > 0 ? (ctx->state.hs.w[24] ^ (*((const uint64_t*)NONCE_POINTER))) : 0
-
 
 static void
 #if defined(AESNI)
@@ -152,6 +142,8 @@ cn_slow_hash_noaesni
     b_x = _mm_xor_si128(b_x, c_x);
     _mm_store_si128((__m128i *)&ctx->long_state[a[0] & 0x1FFFF0], b_x);
 
+	VARIANT1_1(&ctx->long_state[a[0] & 0x1FFFF0]);
+
     nextblock = (uint64_t *)&ctx->long_state[c[0] & 0x1FFFF0];
     b[0] = nextblock[0];
     b[1] = nextblock[1];
@@ -180,6 +172,9 @@ cn_slow_hash_noaesni
 
     a[0] ^= b[0];
     a[1] ^= b[1];
+
+	VARIANT1_2(dst + 1);
+
     b_x = c_x;
     //__builtin_prefetch(&ctx->long_state[a[0] & 0x1FFFF0], 0, 3);
   }
