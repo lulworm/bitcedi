@@ -75,7 +75,7 @@ namespace CryptoNote {
       const CryptoNote::Currency& currency, 
       CryptoNote::ITransactionValidator& validator,
       CryptoNote::ITimeProvider& timeProvider,
-      Logging::ILogger& log);
+	  Logging::ILogger& log);
 
     bool addObserver(ITxPoolObserver* observer);
     bool removeObserver(ITxPoolObserver* observer);
