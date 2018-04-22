@@ -67,7 +67,6 @@ target_link_libraries(Miner CryptoNoteCore Rpc Serialization System Http Logging
 
 add_dependencies(Rpc version)
 
-add_dependencies(ConnectivityTool version)
 add_dependencies(Daemon version)
 add_dependencies(SimpleWallet version)
 add_dependencies(PaymentGateService version)
