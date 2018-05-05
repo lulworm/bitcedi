@@ -2,7 +2,7 @@
 
 BipCot NoGov Software License (www.bipcot.org), version 1.12 / No warranty of usability of BipCoin software.
 
-This original computer code and resulting program was made by Beastlick Internet Policy Commission Outreach Team, 2016. All rights to make fun of you reserved. https://bipcoin.org
+This original computer code and resulting program was made by Beastlick Internet Policy Commission Outreach Team, 2016. All rights to make fun of you reserved. https://bitcedibanking.org
 
 (Adapted from CryptoNote code, covered by permissive MIT license. https://cryptonote.org )
 
