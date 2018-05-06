@@ -31,6 +31,7 @@ const uint64_t COIN                                          = UINT64_C(10000000
 const uint64_t MINIMUM_FEE                                   = UINT64_C(100000);     // pow(10, 5)
 const uint64_t DEFAULT_DUST_THRESHOLD                        = UINT64_C(100000);     // pow(10, 5)
 //const uint64_t GENESIS_BLOCK_REWARD							 = UINT64_C(0);
+const uint64_t MAX_TX_MIXIN_SIZE                             = 50;
 
 const uint64_t EXPECTED_NUMBER_OF_BLOCKS_PER_DAY             = 24 * 60 * 60 / DIFFICULTY_TARGET;
 const size_t   DIFFICULTY_WINDOW                             = 240; // blocks
