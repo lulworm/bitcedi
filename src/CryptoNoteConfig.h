@@ -85,7 +85,7 @@ const uint64_t START_BLOCK_REWARD                            = (UINT64_C(80) * p
 const uint64_t MIN_BLOCK_REWARD                              = (UINT64_C(5) * parameters::COIN);
 const uint64_t REWARD_HALVING_INTERVAL                       = (UINT64_C(66000));
 
-const char     CRYPTONOTE_NAME[]                             = "bitcedi";
+const char     CRYPTONOTE_NAME[]                             = "citadel";
 const char     GENESIS_COINBASE_TX_HEX[]                     = "010601ff000180a0d9e61d029b2e4c0281c0b02e7c53291a94d1d0cbff8883f8024f5142ee494ffbbd08807121019e2d1a633f2a54ff1a415e0051d5a699461d9c95479f67c8568446581c2e3782";
 const uint32_t GENESIS_NONCE                                 = 70;
 
