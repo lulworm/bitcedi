@@ -140,8 +140,9 @@ bool Currency::getBlockReward(size_t medianSize, size_t currentBlockSize, uint64
 uint64_t Currency::calculateInterest(uint64_t amount, uint32_t term) const {
   assert(m_depositMinTerm <= term && term <= m_depositMaxTerm);
   assert(static_cast<uint64_t>(term)* m_depositMaxTotalRate > m_depositMinTotalRateFactor);
-
-  uint64_t a = static_cast<uint64_t>(term) * m_depositMaxTotalRate - m_depositMinTotalRateFactor;
+  
+  uint64_t a = static_cast<uint64_t>(term) * (isNewIterest() ? m_depositMaxTotalRate_v2 : m_depositMaxTotalRate) - m_depositMinTotalRateFactor;
+  
   uint64_t bHi;
   uint64_t bLo = mul128(amount, a, &bHi);
 
@@ -620,7 +621,9 @@ CurrencyBuilder::CurrencyBuilder(Logging::ILogger& log) : m_currency(log) {
   depositMaxTerm(parameters::DEPOSIT_MAX_TERM);
   depositMinTotalRateFactor(parameters::DEPOSIT_MIN_TOTAL_RATE_FACTOR);
   depositMaxTotalRate(parameters::DEPOSIT_MAX_TOTAL_RATE);
-
+  depositMaxTotalRate_v2(parameters::DEPOSIT_MAX_TOTAL_RATE_V2);
+  depositMaxTotalRateChangeHeight(parameters::DEPOSIT_MAX_TOTAL_RATE_CHANGE_HEIGHT);
+  
   maxBlockSizeInitial(parameters::MAX_BLOCK_SIZE_INITIAL);
   maxBlockSizeGrowthSpeedNumerator(parameters::MAX_BLOCK_SIZE_GROWTH_SPEED_NUMERATOR);
   maxBlockSizeGrowthSpeedDenominator(parameters::MAX_BLOCK_SIZE_GROWTH_SPEED_DENOMINATOR);
@@ -649,6 +652,7 @@ CurrencyBuilder::CurrencyBuilder(Logging::ILogger& log) : m_currency(log) {
   blockchinIndicesFileName(parameters::CRYPTONOTE_BLOCKCHAIN_INDICES_FILENAME);
 
   testnet(false);
+  change_interest(false);
 }
 
 Transaction CurrencyBuilder::generateGenesisTransaction() {

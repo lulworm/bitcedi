@@ -55,6 +55,8 @@ public:
   uint32_t depositMaxTerm() const { return m_depositMaxTerm; }
   uint64_t depositMinTotalRateFactor() const { return m_depositMinTotalRateFactor; }
   uint64_t depositMaxTotalRate() const { return m_depositMaxTotalRate; }
+  uint64_t depositMaxTotalRate_v2() const { return m_depositMaxTotalRate_v2; }
+  uint32_t depositMaxTotalRateChangeHeight() const { return m_depositMaxTotalRateChangeHeight; }
 
   size_t maxBlockSizeInitial() const { return m_maxBlockSizeInitial; }
   uint64_t maxBlockSizeGrowthSpeedNumerator() const { return m_maxBlockSizeGrowthSpeedNumerator; }
@@ -86,6 +88,7 @@ public:
   const std::string& blockchinIndicesFileName() const { return m_blockchinIndicesFileName; }
 
   bool isTestnet() const { return m_testnet; }
+  bool isNewIterest() const { return m_change_interest; }
 
   const Block& genesisBlock() const { return m_genesisBlock; }
   const Crypto::Hash& genesisBlockHash() const { return m_genesisBlockHash; }
@@ -165,6 +168,8 @@ private:
   uint32_t m_depositMaxTerm;
   uint64_t m_depositMinTotalRateFactor;
   uint64_t m_depositMaxTotalRate;
+  uint64_t m_depositMaxTotalRate_v2;
+  uint32_t m_depositMaxTotalRateChangeHeight;
 
   size_t m_maxBlockSizeInitial;
   uint64_t m_maxBlockSizeGrowthSpeedNumerator;
@@ -196,6 +201,7 @@ private:
   static const std::vector<uint64_t> PRETTY_AMOUNTS;
 
   bool m_testnet;
+  bool m_change_interest;
   std::string m_genesisCoinbaseTxHex;
 
   Block m_genesisBlock;
@@ -251,6 +257,8 @@ public:
   CurrencyBuilder& depositMaxTerm(uint32_t val) { m_currency.m_depositMaxTerm = val; return *this; }
   CurrencyBuilder& depositMinTotalRateFactor(uint64_t val) { m_currency.m_depositMinTotalRateFactor = val; return *this; }
   CurrencyBuilder& depositMaxTotalRate(uint64_t val) { m_currency.m_depositMaxTotalRate = val; return *this; }
+  CurrencyBuilder& depositMaxTotalRate_v2(uint64_t val) { m_currency.m_depositMaxTotalRate_v2 = val; return *this; }
+  CurrencyBuilder& depositMaxTotalRateChangeHeight(uint32_t val) { m_currency.m_depositMaxTotalRateChangeHeight = val; return *this; }
 
   CurrencyBuilder& maxBlockSizeInitial(size_t val) { m_currency.m_maxBlockSizeInitial = val; return *this; }
   CurrencyBuilder& maxBlockSizeGrowthSpeedNumerator(uint64_t val) { m_currency.m_maxBlockSizeGrowthSpeedNumerator = val; return *this; }
@@ -281,6 +289,7 @@ public:
   
   //CurrencyBuilder& genesisCoinbaseTxHex(const std::string& val) { m_currency.m_genesisCoinbaseTxHex = val; return *this; }
   CurrencyBuilder& testnet(bool val) { m_currency.m_testnet = val; return *this; }
+  CurrencyBuilder& change_interest(bool val) { m_currency.m_change_interest = val; return *this; }
 
 private:
   Currency m_currency;
