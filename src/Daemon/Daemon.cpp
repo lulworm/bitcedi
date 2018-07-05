@@ -327,11 +327,6 @@ int main(int argc, char* argv[])
     }
     logger(INFO) << "Core initialized OK";
 
-	// change interest rate
-	bool changeInterest = ccore.get_current_blockchain_height() >= currency.depositMaxTotalRateChangeHeight();
-	currencyBuilder.change_interest(changeInterest);
-	logger(INFO) << "Max interest rate is " << (changeInterest ? "12%" : "107%");
-	
     // start components
     if (!command_line::has_arg(vm, arg_console)) {
       dch.start_handling();

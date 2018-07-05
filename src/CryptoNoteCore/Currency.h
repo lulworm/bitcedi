@@ -88,19 +88,18 @@ public:
   const std::string& blockchinIndicesFileName() const { return m_blockchinIndicesFileName; }
 
   bool isTestnet() const { return m_testnet; }
-  bool isNewIterest() const { return m_change_interest; }
 
   const Block& genesisBlock() const { return m_genesisBlock; }
   const Crypto::Hash& genesisBlockHash() const { return m_genesisBlockHash; }
 
   bool getBlockReward(size_t medianSize, size_t currentBlockSize, uint64_t alreadyGeneratedCoins, uint64_t fee, uint32_t height,
   uint64_t& reward, int64_t& emissionChange) const;
-  uint64_t calculateInterest(uint64_t amount, uint32_t term) const;
-  uint64_t calculateTotalTransactionInterest(const Transaction& tx) const;
-  uint64_t getTransactionInputAmount(const TransactionInput& in) const;
-  uint64_t getTransactionAllInputsAmount(const Transaction& tx) const;
-  bool getTransactionFee(const Transaction& tx, uint64_t & fee) const;
-  uint64_t getTransactionFee(const Transaction& tx) const;
+  uint64_t calculateInterest(uint64_t amount, uint32_t term, uint32_t height) const;
+  uint64_t calculateTotalTransactionInterest(const Transaction& tx, uint32_t height) const;
+  uint64_t getTransactionInputAmount(const TransactionInput& in, uint32_t& height) const;
+  uint64_t getTransactionAllInputsAmount(const Transaction& tx, uint32_t& height) const;
+  bool getTransactionFee(const Transaction& tx, uint64_t & fee, uint32_t& height) const;
+  uint64_t getTransactionFee(const Transaction& tx, uint32_t height) const;
   size_t maxBlockCumulativeSize(uint64_t height) const;
 
   bool constructMinerTx(uint32_t height, size_t medianSize, uint64_t alreadyGeneratedCoins, size_t currentBlockSize,
@@ -201,7 +200,6 @@ private:
   static const std::vector<uint64_t> PRETTY_AMOUNTS;
 
   bool m_testnet;
-  bool m_change_interest;
   std::string m_genesisCoinbaseTxHex;
 
   Block m_genesisBlock;
@@ -289,7 +287,6 @@ public:
   
   //CurrencyBuilder& genesisCoinbaseTxHex(const std::string& val) { m_currency.m_genesisCoinbaseTxHex = val; return *this; }
   CurrencyBuilder& testnet(bool val) { m_currency.m_testnet = val; return *this; }
-  CurrencyBuilder& change_interest(bool val) { m_currency.m_change_interest = val; return *this; }
 
 private:
   Currency m_currency;
