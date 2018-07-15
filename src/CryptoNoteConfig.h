@@ -11,13 +11,13 @@
 namespace CryptoNote {
 namespace parameters {
 
+const uint64_t DIFFICULTY_TARGET                             = 240; // seconds
 const uint64_t CRYPTONOTE_MAX_BLOCK_NUMBER                   = 500000000;
 const size_t   CRYPTONOTE_MAX_BLOCK_BLOB_SIZE                = 500000000;
 const size_t   CRYPTONOTE_MAX_TX_SIZE                        = 1000000000;
 const uint64_t CRYPTONOTE_PUBLIC_ADDRESS_BASE58_PREFIX       = 0xd7; // addresses start with "0xc"
 const size_t   CRYPTONOTE_MINED_MONEY_UNLOCK_WINDOW          = 6;
-const uint64_t CRYPTONOTE_BLOCK_FUTURE_TIME_LIMIT            = 60 * 60 * 2;
-
+const uint64_t CRYPTONOTE_BLOCK_FUTURE_TIME_LIMIT            = DIFFICULTY_TARGET * 3;
 const size_t   BLOCKCHAIN_TIMESTAMP_CHECK_WINDOW             = 30;
 
 const uint64_t MONEY_SUPPLY                                  = UINT64_C(858986905600000000);
@@ -31,10 +31,11 @@ const uint64_t COIN                                          = UINT64_C(10000000
 const uint64_t MINIMUM_FEE                                   = UINT64_C(100000);     // pow(10, 5)
 const uint64_t DEFAULT_DUST_THRESHOLD                        = UINT64_C(100000);     // pow(10, 5)
 //const uint64_t GENESIS_BLOCK_REWARD							 = UINT64_C(0);
+const uint64_t MAX_TX_MIXIN_SIZE                             = 50;
 
-const uint64_t DIFFICULTY_TARGET                             = 240; // seconds
 const uint64_t EXPECTED_NUMBER_OF_BLOCKS_PER_DAY             = 24 * 60 * 60 / DIFFICULTY_TARGET;
 const size_t   DIFFICULTY_WINDOW                             = 240; // blocks
+const size_t   DIFFICULTY_WINDOW_V2                          = 60;  // blocks
 const size_t   DIFFICULTY_CUT                                = 30;  // timestamps to cut after sorting
 const size_t   DIFFICULTY_LAG                                = 15;
 static_assert(2 * DIFFICULTY_CUT <= DIFFICULTY_WINDOW - 2, "Bad DIFFICULTY_WINDOW or DIFFICULTY_CUT");
@@ -63,7 +64,8 @@ const size_t   FUSION_TX_MAX_SIZE                            = CRYPTONOTE_BLOCK_
 const size_t   FUSION_TX_MIN_INPUT_COUNT                     = 12;
 const size_t   FUSION_TX_MIN_IN_OUT_COUNT_RATIO              = 4;
 
-const uint64_t UPGRADE_HEIGHT                                = 1;
+const uint32_t UPGRADE_HEIGHT_V2                             = 1;
+const uint32_t UPGRADE_HEIGHT_V3                             = 170500;
 const unsigned UPGRADE_VOTING_THRESHOLD                      = 90;               // percent
 const size_t   UPGRADE_VOTING_WINDOW                         = EXPECTED_NUMBER_OF_BLOCKS_PER_DAY;  // blocks
 const size_t   UPGRADE_WINDOW                                = EXPECTED_NUMBER_OF_BLOCKS_PER_DAY;  // blocks
@@ -83,7 +85,7 @@ const uint64_t START_BLOCK_REWARD                            = (UINT64_C(80) * p
 const uint64_t MIN_BLOCK_REWARD                              = (UINT64_C(5) * parameters::COIN);
 const uint64_t REWARD_HALVING_INTERVAL                       = (UINT64_C(66000));
 
-const char     CRYPTONOTE_NAME[]                             = "bitcedi";
+const char     CRYPTONOTE_NAME[]                             = "citadel";
 const char     GENESIS_COINBASE_TX_HEX[]                     = "010601ff000180a0d9e61d029b2e4c0281c0b02e7c53291a94d1d0cbff8883f8024f5142ee494ffbbd08807121019e2d1a633f2a54ff1a415e0051d5a699461d9c95479f67c8568446581c2e3782";
 const uint32_t GENESIS_NONCE                                 = 70;
 
@@ -91,6 +93,7 @@ const uint8_t  TRANSACTION_VERSION_1                         =  1;
 const uint8_t  TRANSACTION_VERSION_2                         =  2;
 const uint8_t  BLOCK_MAJOR_VERSION_1                         =  1;
 const uint8_t  BLOCK_MAJOR_VERSION_2                         =  2;
+const uint8_t  BLOCK_MAJOR_VERSION_3                         =  3;
 const uint8_t  BLOCK_MINOR_VERSION_0                         =  0;
 const uint8_t  BLOCK_MINOR_VERSION_1                         =  1;
 
@@ -117,9 +120,9 @@ const size_t   P2P_DEFAULT_HANDSHAKE_INVOKE_TIMEOUT          = 5000;          //
 const char     P2P_STAT_TRUSTED_PUB_KEY[]                    = "85ae8734f90bc1ee295ceb0ec05a49852d4dbbc9d1c27a619b5f4bdf26a0196e";
 
 const std::initializer_list<const char*> SEED_NODES = {
-   "seed0.bitcedi.org:55008",
-   "seed1.bitcedi.org:55008",
-   "seed2.bitcedi.org:55008"
+   "173.230.155.185:55008",
+   "172.104.240.101:55008",
+   "45.33.53.50:55008"	   
 };
 
 struct CheckpointData {
