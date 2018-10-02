@@ -17,10 +17,10 @@
 #include "IWallet.h"
 #include "INode.h"
 
+
 using namespace Crypto;
 using namespace Logging;
 using namespace Common;
-
 std::unordered_map<Hash, std::vector<PublicKey>> public_keys_seen;
 
 namespace {
@@ -60,8 +60,6 @@ void findMyOutputs(
   size_t keyIndex = 0;
   size_t outputCount = tx.getOutputCount();
 
-  std::unordered_set<Crypto::PublicKey> public_keys_seen;
-
   for (size_t idx = 0; idx < outputCount; ++idx) {
 
     auto outType = tx.getOutputType(size_t(idx));
@@ -71,15 +69,7 @@ void findMyOutputs(
       uint64_t amount;
       KeyOutput out;
       tx.getOutput(idx, out, amount);
-
-      if (public_keys_seen.find(out.key) != public_keys_seen.end())
-	  {
-        throw std::runtime_error("The same transaction pubkey is present more than once");
-	  }
-	  else {
-        public_keys_seen.insert(out.key);
-        checkOutputKey(derivation, out.key, keyIndex, idx, spendKeys, outputs);
-      }
+      checkOutputKey(derivation, out.key, keyIndex, idx, spendKeys, outputs);
       ++keyIndex;
 
     } else if (outType == TransactionTypes::OutputType::Multisignature) {
@@ -87,16 +77,8 @@ void findMyOutputs(
       uint64_t amount;
       MultisignatureOutput out;
       tx.getOutput(idx, out, amount);
-
       for (const auto& key : out.keys) {
-        if (public_keys_seen.find(key) != public_keys_seen.end())
-        {
-          throw std::runtime_error("The same transaction pubkey is present more than once");
-        }
-        else {
-          public_keys_seen.insert(key);
-          checkOutputKey(derivation, key, idx, idx, spendKeys, outputs);
-        }
+        checkOutputKey(derivation, key, idx, idx, spendKeys, outputs);
         ++keyIndex;
       }
     }
@@ -118,8 +100,8 @@ std::vector<Crypto::Hash> getBlockHashes(const CryptoNote::CompleteBlock* blocks
 
 namespace CryptoNote {
 
-TransfersConsumer::TransfersConsumer(const CryptoNote::Currency& currency, INode& node, Logging::ILogger& logger, const SecretKey& viewSecret) :
-  m_node(node), m_viewSecret(viewSecret), m_currency(currency), m_logger(logger, "TransfersConsumer") {
+TransfersConsumer::TransfersConsumer(const CryptoNote::Currency& currency, INode& node, const SecretKey& viewSecret) :
+  m_node(node), m_viewSecret(viewSecret), m_currency(currency) {
   updateSyncStart();
 }
 
@@ -131,7 +113,7 @@ ITransfersSubscription& TransfersConsumer::addSubscription(const AccountSubscrip
   auto& res = m_subscriptions[subscription.keys.address.spendPublicKey];
 
   if (res.get() == nullptr) {
-    res.reset(new TransfersSubscription(m_currency, m_logger.getLogger(), subscription));
+    res.reset(new TransfersSubscription(m_currency, subscription));
     m_spendKeys.insert(subscription.keys.address.spendPublicKey);
     updateSyncStart();
   }
@@ -419,8 +401,7 @@ std::error_code createTransfers(
         info.keyImage);
 
       assert(out.key == reinterpret_cast<const PublicKey&>(in_ephemeral.publicKey));
-
-	  std::unordered_map<Hash, std::vector<PublicKey>>::iterator it = public_keys_seen.find(tx.getTransactionHash());
+	 	  std::unordered_map<Hash, std::vector<PublicKey>>::iterator it = public_keys_seen.find(tx.getTransactionHash());
 	  if (it == public_keys_seen.end()) {
 		  for (const std::pair<Hash, std::vector<PublicKey>>& kv : public_keys_seen) {
 			  auto& keys = kv.second;
@@ -433,7 +414,8 @@ std::error_code createTransfers(
 		  std::vector<PublicKey> temp_keys;
 		  temp_keys.push_back(out.key);
 		  public_keys_seen.insert(std::make_pair(tx.getTransactionHash(), temp_keys));
-	  }
+	  }   
+	     
 
       info.amount = amount;
       info.outputKey = out.key;
@@ -442,7 +424,7 @@ std::error_code createTransfers(
       uint64_t amount;
       MultisignatureOutput out;
       tx.getOutput(idx, out, amount);
-
+	    
 	  for (const auto& key : out.keys) {
 		  std::unordered_map<Hash, std::vector<PublicKey>>::iterator it = public_keys_seen.find(tx.getTransactionHash());
 		  if (it == public_keys_seen.end()) {
@@ -453,14 +435,15 @@ std::error_code createTransfers(
 					  return std::error_code();
 				  }
 			  }
-
-			  std::vector<PublicKey> temp_keys;
+ 			  std::vector<PublicKey> temp_keys;
 			  temp_keys.push_back(key);
 			  public_keys_seen.insert(std::make_pair(tx.getTransactionHash(), temp_keys));
 		  }
 	  }
+
       info.amount = amount;
       info.requiredSignatures = out.requiredSignatureCount;
+      info.term = out.term;
     }
 
     transfers.push_back(info);
@@ -471,14 +454,14 @@ std::error_code createTransfers(
 
 std::error_code TransfersConsumer::preprocessOutputs(const TransactionBlockInfo& blockInfo, const ITransactionReader& tx, PreprocessInfo& info) {
   std::unordered_map<PublicKey, std::vector<uint32_t>> outputs;
-  try {
+   try {
     findMyOutputs(tx, m_viewSecret, m_spendKeys, outputs);
   }
   catch (const std::exception& e) {
     m_logger(ERROR, BRIGHT_RED) << "Failed to process transaction: " << e.what() << ", transaction hash " << Common::podToHex(tx.getTransactionHash());
     return std::error_code();
   }
-
+	
   if (outputs.empty()) {
     return std::error_code();
   }
@@ -496,7 +479,7 @@ std::error_code TransfersConsumer::preprocessOutputs(const TransactionBlockInfo&
     auto it = m_subscriptions.find(kv.first);
     if (it != m_subscriptions.end()) {
       auto& transfers = info.outputs[kv.first];
-	  try {
+       try {
 		  errorCode = createTransfers(it->second->getKeys(), blockInfo, tx, kv.second, info.globalIdxs, transfers);
 		  if (errorCode) {
 			  return errorCode;
@@ -561,7 +544,8 @@ void TransfersConsumer::processOutputs(const TransactionBlockInfo& blockInfo, Tr
       assert(subscribtionTxInfo.blockHeight == blockInfo.height);
     }
   } else {
-    updated = sub.addTransaction(blockInfo, tx, transfers);
+    auto messages = get_messages_from_extra(tx.getExtra(), tx.getTransactionPublicKey(), &sub.getKeys().spendSecretKey);
+    updated = sub.addTransaction(blockInfo, tx, transfers, std::move(messages));
     contains = updated;
   }
 }
