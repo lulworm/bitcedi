@@ -107,6 +107,8 @@ uint64_t base_reward;
   base_reward = (std::max)(base_reward, MIN_BLOCK_REWARD);
   base_reward = (std::min)(base_reward, m_moneySupply - alreadyGeneratedCoins);
   return base_reward;
+	
+}
 
 uint32_t Currency::upgradeHeight(uint8_t majorVersion) const {
   if (majorVersion == BLOCK_MAJOR_VERSION_2) {
