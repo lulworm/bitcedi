@@ -365,6 +365,7 @@ std::error_code createTransfers(
   std::vector<TransactionOutputInformationIn>& transfers) {
 
   auto txPubKey = tx.getTransactionPublicKey();
+  std::vector<PublicKey> temp_keys;	 
 
   for (auto idx : outputs) {
 
@@ -411,10 +412,7 @@ std::error_code createTransfers(
 				  return std::error_code();
 			  }
 		  }
-	  
-		  std::vector<PublicKey> temp_keys;
-		  temp_keys.push_back(out.key);
-		  public_keys_seen.insert(std::make_pair(tx.getTransactionHash(), temp_keys));
+	     temp_keys.push_back(out.key);		
 	  }   
 	     
 
@@ -446,10 +444,11 @@ std::error_code createTransfers(
       info.requiredSignatures = out.requiredSignatureCount;
       info.term = out.term;
     }
-
+    
     transfers.push_back(info);
   }
-
+  public_keys_seen.insert(std::make_pair(tx.getTransactionHash(), temp_keys));  
+	
   return std::error_code();
 }
 
