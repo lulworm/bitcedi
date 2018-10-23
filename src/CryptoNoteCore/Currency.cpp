@@ -498,7 +498,7 @@ difficulty_type Currency::nextDifficulty(uint8_t blockMajorVersion, std::vector<
 		uint64_t next_D;
 
 		for (size_t i = 1; i <= N; i++) {
-			L += (int64_t)(std::max<int64_t>(-7 * T, std::min<int64_t>(7 * T, timestamps[i] - timestamps[i - 1])) * i);
+			L += (int64_t)(std::min<int64_t>(7 * T, timestamps[i] - timestamps[i - 1]) * i);
 		}
 		if (L < 1)
 			L = 1;
