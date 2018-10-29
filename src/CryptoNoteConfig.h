@@ -81,6 +81,7 @@ const char     CRYPTONOTE_POOLDATA_FILENAME[]                = "poolstate.bin";
 const char     P2P_NET_DATA_FILENAME[]                       = "p2pstate.bin";
 const char     CRYPTONOTE_BLOCKCHAIN_INDICES_FILENAME[]      = "blockchainindices.dat";
 const char     MINER_CONFIG_FILE_NAME[]                      = "miner_conf.json";
+const uint32_t EVIL_MAY_CRY_FIX                              =  235000;
 } // parameters
 
 const uint64_t START_BLOCK_REWARD                            = (UINT64_C(80) * parameters::COIN);
@@ -109,7 +110,7 @@ const int      RPC_DEFAULT_PORT                              = 65084;
 const size_t   P2P_LOCAL_WHITE_PEERLIST_LIMIT                =  1000;
 const size_t   P2P_LOCAL_GRAY_PEERLIST_LIMIT                 =  5000;
 
-const uint32_t EVIL_MAY_CRY_FIX                              =  235000;   
+   
 
 const size_t   P2P_CONNECTION_MAX_WRITE_BUFFER_SIZE          = 16 * 1024 * 1024; // 16 MB
 const uint32_t P2P_DEFAULT_CONNECTIONS_COUNT                 = 8;
