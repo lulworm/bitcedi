@@ -466,7 +466,7 @@ bool Currency::parseAmount(const std::string& str, uint64_t& amount) const {
 difficulty_type Currency::nextDifficulty(uint32_t height, uint8_t blockMajorVersion, std::vector<uint64_t> timestamps,
   std::vector<difficulty_type> cumulativeDifficulties) const {
 	if (blockMajorVersion >= BLOCK_MAJOR_VERSION_3) {
-             return nextDifficulty(height, blockMajorVersion, timestamps, cumulativeDifficulties);
+       
 		// LWMA difficulty algorithm (simplified)
 		// Copyright (c) 2017-2018 Zawy
 		// MIT license http://www.opensource.org/licenses/mit-license.php
