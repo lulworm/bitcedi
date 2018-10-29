@@ -505,7 +505,7 @@ difficulty_type Currency::nextDifficulty(uint32_t height, uint8_t blockMajorVers
                 }
 		if (L < 1)
 			L = 1;
-
+                }
 		uint64_t low, high;
 		low = mul128(cumulativeDifficulties[N] - cumulativeDifficulties[0], static_cast<uint64_t>(k), &high);
 		// blockchain error "Difficulty overhead" if this function returns zero
