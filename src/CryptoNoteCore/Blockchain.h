@@ -78,6 +78,7 @@ namespace CryptoNote {
     Crypto::Hash getTailId();
     Crypto::Hash getTailId(uint32_t& height);
     difficulty_type getDifficultyForNextBlock();
+    uint64_t getBlockTimestamp(uint32_t height);
     uint64_t getCoinsInCirculation();
     uint8_t get_block_major_version_for_height(uint64_t height) const;
     bool addNewBlock(const Block& bl_, block_verification_context& bvc);
@@ -256,7 +257,10 @@ namespace CryptoNote {
     CryptoNote::DepositIndex m_depositIndex;
     TransactionMap m_transactionMap;
     MultisignatureOutputsContainer m_multisignatureOutputs;
-    UpgradeDetector m_upgradeDetector;
+	UpgradeDetector m_upgradeDetectorV2;
+	UpgradeDetector m_upgradeDetectorV3;
+	UpgradeDetector m_upgradeDetectorV4;
+
 
     PaymentIdIndex m_paymentIdIndex;
     TimestampBlocksIndex m_timestampIndex;
@@ -295,7 +299,7 @@ namespace CryptoNote {
     bool check_tx_outputs(const Transaction& tx) const;
     bool have_tx_keyimg_as_spent(const Crypto::KeyImage &key_im);
     const TransactionEntry& transactionByIndex(TransactionIndex index);
-    bool pushBlock(const Block& blockData, block_verification_context& bvc);
+    bool pushBlock(const Block& blockData, block_verification_context& bvc, uint32_t height);
     bool pushBlock(const Block& blockData, const std::vector<Transaction>& transactions, block_verification_context& bvc);
     bool pushBlock(BlockEntry& block);
     void popBlock(const Crypto::Hash& blockHash);
@@ -307,8 +311,8 @@ namespace CryptoNote {
     bool storeBlockchainIndices();
     bool loadBlockchainIndices();
 
-    bool loadTransactions(const Block& block, std::vector<Transaction>& transactions);
-    void saveTransactions(const std::vector<Transaction>& transactions);
+    bool loadTransactions(const Block& block, std::vector<Transaction>& transactions, uint32_t height);
+    void saveTransactions(const std::vector<Transaction>& transactions, uint32_t height);
 
     void sendMessage(const BlockchainMessage& message);
 

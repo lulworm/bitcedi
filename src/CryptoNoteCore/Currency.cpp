@@ -60,7 +60,9 @@ bool Currency::init() {
   }
 
   if (isTestnet()) {
-    m_upgradeHeight = 0;
+    m_upgradeHeightV2 = 0;
+	m_upgradeHeightV3 = 11;
+	m_upgradeHeightV4 = 40;
     m_blocksFileName = "testnet_" + m_blocksFileName;
     m_blocksCacheFileName = "testnet_" + m_blocksCacheFileName;
     m_blockIndexesFileName = "testnet_" + m_blockIndexesFileName;
@@ -98,12 +100,31 @@ bool Currency::generateGenesisBlock() {
 
   return true;
 }
-
+	
+	
 uint64_t Currency::baseRewardFunction(uint64_t alreadyGeneratedCoins, uint32_t height) const {
-  uint64_t base_reward = START_BLOCK_REWARD >> (static_cast<uint64_t>(height) / REWARD_HALVING_INTERVAL);
+
+uint64_t base_reward;
+            
+    uint64_t shift = static_cast<uint64_t>(height) / REWARD_HALVING_INTERVAL;
+    base_reward = shift >= 64 ? 0 : START_BLOCK_REWARD >> shift;
   base_reward = (std::max)(base_reward, MIN_BLOCK_REWARD);
   base_reward = (std::min)(base_reward, m_moneySupply - alreadyGeneratedCoins);
   return base_reward;
+	
+}
+
+uint32_t Currency::upgradeHeight(uint8_t majorVersion) const {
+  if (majorVersion == BLOCK_MAJOR_VERSION_4) {
+    return m_upgradeHeightV4;
+  }
+    else if (majorVersion == BLOCK_MAJOR_VERSION_2) {
+    return m_upgradeHeightV2;
+  } else if (majorVersion == BLOCK_MAJOR_VERSION_3) {
+    return m_upgradeHeightV3;
+  } else {
+    return static_cast<uint32_t>(-1);
+  }
 }
 
 bool Currency::getBlockReward(size_t medianSize, size_t currentBlockSize, uint64_t alreadyGeneratedCoins,
@@ -126,11 +147,12 @@ bool Currency::getBlockReward(size_t medianSize, size_t currentBlockSize, uint64
   return true;
 }
 
-uint64_t Currency::calculateInterest(uint64_t amount, uint32_t term) const {
+uint64_t Currency::calculateInterest(uint64_t amount, uint32_t term, uint32_t height) const {
   assert(m_depositMinTerm <= term && term <= m_depositMaxTerm);
   assert(static_cast<uint64_t>(term)* m_depositMaxTotalRate > m_depositMinTotalRateFactor);
-
-  uint64_t a = static_cast<uint64_t>(term) * m_depositMaxTotalRate - m_depositMinTotalRateFactor;
+  
+  uint64_t a = static_cast<uint64_t>(term) * (height >= depositMaxTotalRateChangeHeight() ? m_depositMaxTotalRate_v2 : m_depositMaxTotalRate) - m_depositMinTotalRateFactor;
+  
   uint64_t bHi;
   uint64_t bLo = mul128(amount, a, &bHi);
 
@@ -143,13 +165,13 @@ uint64_t Currency::calculateInterest(uint64_t amount, uint32_t term) const {
   return interestLo;
 }
 
-uint64_t Currency::calculateTotalTransactionInterest(const Transaction& tx) const {
+uint64_t Currency::calculateTotalTransactionInterest(const Transaction& tx, uint32_t height) const {
   uint64_t interest = 0;
   for (const TransactionInput& input : tx.inputs) {
     if (input.type() == typeid(MultisignatureInput)) {
       const MultisignatureInput& multisignatureInput = boost::get<MultisignatureInput>(input);
       if (multisignatureInput.term != 0) {
-        interest += calculateInterest(multisignatureInput.amount, multisignatureInput.term);
+        interest += calculateInterest(multisignatureInput.amount, multisignatureInput.term, height);
       }
     }
   }
@@ -157,7 +179,7 @@ uint64_t Currency::calculateTotalTransactionInterest(const Transaction& tx) cons
   return interest;
 }
 
-uint64_t Currency::getTransactionInputAmount(const TransactionInput& in) const {
+uint64_t Currency::getTransactionInputAmount(const TransactionInput& in, uint32_t& height) const {
   if (in.type() == typeid(KeyInput)) {
     return boost::get<KeyInput>(in).amount;
   } else if (in.type() == typeid(MultisignatureInput)) {
@@ -165,7 +187,7 @@ uint64_t Currency::getTransactionInputAmount(const TransactionInput& in) const {
     if (multisignatureInput.term == 0) {
       return multisignatureInput.amount;
     } else {
-      return multisignatureInput.amount + calculateInterest(multisignatureInput.amount, multisignatureInput.term);
+      return multisignatureInput.amount + calculateInterest(multisignatureInput.amount, multisignatureInput.term, height);
     }
   } else if (in.type() == typeid(BaseInput)) {
     return 0;
@@ -175,20 +197,20 @@ uint64_t Currency::getTransactionInputAmount(const TransactionInput& in) const {
   }
 }
 
-uint64_t Currency::getTransactionAllInputsAmount(const Transaction& tx) const {
+uint64_t Currency::getTransactionAllInputsAmount(const Transaction& tx, uint32_t& height) const {
   uint64_t amount = 0;
   for (const auto& in : tx.inputs) {
-    amount += getTransactionInputAmount(in);
+    amount += getTransactionInputAmount(in, height);
   }
   return amount;
 }
 
-bool Currency::getTransactionFee(const Transaction& tx, uint64_t & fee) const {
+bool Currency::getTransactionFee(const Transaction& tx, uint64_t & fee, uint32_t& height) const {
   uint64_t amount_in = 0;
   uint64_t amount_out = 0;
 
   for (const auto& in : tx.inputs) {
-    amount_in += getTransactionInputAmount(in);
+    amount_in += getTransactionInputAmount(in, height);
   }
 
   for (const auto& o : tx.outputs) {
@@ -203,9 +225,9 @@ bool Currency::getTransactionFee(const Transaction& tx, uint64_t & fee) const {
   return true;
 }
 
-uint64_t Currency::getTransactionFee(const Transaction& tx) const {
+uint64_t Currency::getTransactionFee(const Transaction& tx, uint32_t height) const {
   uint64_t r = 0;
-  if (!getTransactionFee(tx, r)) {
+  if (!getTransactionFee(tx, r, height)) {
     r = 0;
   }
   return r;
@@ -445,49 +467,106 @@ bool Currency::parseAmount(const std::string& str, uint64_t& amount) const {
   return Common::fromString(strAmount, amount);
 }
 
-difficulty_type Currency::nextDifficulty(std::vector<uint64_t> timestamps,
+difficulty_type Currency::nextDifficulty(uint32_t height, uint8_t blockMajorVersion, std::vector<uint64_t> timestamps,
   std::vector<difficulty_type> cumulativeDifficulties) const {
-  assert(m_difficultyWindow >= 2);
+	if (blockMajorVersion >= BLOCK_MAJOR_VERSION_3) {
+       
+		// LWMA difficulty algorithm (simplified)
+		// Copyright (c) 2017-2018 Zawy
+		// MIT license http://www.opensource.org/licenses/mit-license.php
+		// set constants:  
+		// N is most recent solved block. 
+		// T= target solvetime, adjust = 0.9989^(500/N),  N=int((45*(600/T)^(0.3*(600/T)^0.2)
+		// timestamp, cumulativedifficulties, and target are vectors of size N+1
 
-  if (timestamps.size() > m_difficultyWindow) {
-    timestamps.resize(m_difficultyWindow);
-    cumulativeDifficulties.resize(m_difficultyWindow);
-  }
+		const int64_t T = static_cast<int64_t>(m_difficultyTarget);
+		size_t N = CryptoNote::parameters::DIFFICULTY_WINDOW_V2;
+		const double_t adjust = pow(0.9989, 500 / N);
+		const double_t k = T * (N + 1) * adjust;
 
-  size_t length = timestamps.size();
-  assert(length == cumulativeDifficulties.size());
-  assert(length <= m_difficultyWindow);
-  if (length <= 1) {
-    return 1;
-  }
+		if (timestamps.size() < 4) {
+			return 1;
+		}
+		// use a smaller N if timestamps and difficulies vectors are less than N+1
+		if (timestamps.size() < N + 1) {
+			N = timestamps.size() - 1;
+		}
+		if (timestamps.size() > N + 1) {
+			timestamps.resize(N + 1);
+		}
+		if (cumulativeDifficulties.size() > N + 1) {
+			cumulativeDifficulties.resize(N + 1);
+		}
 
-  sort(timestamps.begin(), timestamps.end());
+		int64_t L(0);
+		uint64_t next_D;
 
-  size_t cutBegin, cutEnd;
-  assert(2 * m_difficultyCut <= m_difficultyWindow - 2);
-  if (length <= m_difficultyWindow - 2 * m_difficultyCut) {
-    cutBegin = 0;
-    cutEnd = length;
-  } else {
-    cutBegin = (length - (m_difficultyWindow - 2 * m_difficultyCut) + 1) / 2;
-    cutEnd = cutBegin + (m_difficultyWindow - 2 * m_difficultyCut);
-  }
-  assert(/*cut_begin >= 0 &&*/ cutBegin + 2 <= cutEnd && cutEnd <= length);
-  uint64_t timeSpan = timestamps[cutEnd - 1] - timestamps[cutBegin];
-  if (timeSpan == 0) {
-    timeSpan = 1;
-  }
+		for (size_t i = 1; i <= N; i++) {
+			if (height < CryptoNote::parameters::EVIL_MAY_CRY_FIX) {  
+                L += (int64_t)(std::max<int64_t>(-7 * T, std::min<int64_t>(7 * T, timestamps[i] - timestamps[i - 1])) * i);
+                } else {
+                L += (int64_t)(timestamps[i] - timestamps[i - 1]) * i;
+                }
+		if (L < 1)
+			L = 1;
+                }
+		uint64_t low, high;
+		low = mul128(cumulativeDifficulties[N] - cumulativeDifficulties[0], static_cast<uint64_t>(k), &high);
+		// blockchain error "Difficulty overhead" if this function returns zero
+		if (high != 0) {
+			return 0;
+		}
 
-  difficulty_type totalWork = cumulativeDifficulties[cutEnd - 1] - cumulativeDifficulties[cutBegin];
-  assert(totalWork > 0);
+		next_D = low / L / 2;
 
-  uint64_t low, high;
-  low = mul128(totalWork, m_difficultyTarget, &high);
-  if (high != 0 || low + timeSpan - 1 < low) {
-    return 0;
-  }
+		return next_D;
 
-  return (low + timeSpan - 1) / timeSpan;
+	}
+	else {
+
+		assert(m_difficultyWindow >= 2);
+
+		if (timestamps.size() > m_difficultyWindow) {
+			timestamps.resize(m_difficultyWindow);
+			cumulativeDifficulties.resize(m_difficultyWindow);
+		}
+
+		size_t length = timestamps.size();
+		assert(length == cumulativeDifficulties.size());
+		assert(length <= m_difficultyWindow);
+		if (length <= 1) {
+			return 1;
+		}
+
+		sort(timestamps.begin(), timestamps.end());
+
+		size_t cutBegin, cutEnd;
+		assert(2 * m_difficultyCut <= m_difficultyWindow - 2);
+		if (length <= m_difficultyWindow - 2 * m_difficultyCut) {
+			cutBegin = 0;
+			cutEnd = length;
+		}
+		else {
+			cutBegin = (length - (m_difficultyWindow - 2 * m_difficultyCut) + 1) / 2;
+			cutEnd = cutBegin + (m_difficultyWindow - 2 * m_difficultyCut);
+		}
+		assert(/*cut_begin >= 0 &&*/ cutBegin + 2 <= cutEnd && cutEnd <= length);
+		uint64_t timeSpan = timestamps[cutEnd - 1] - timestamps[cutBegin];
+		if (timeSpan == 0) {
+			timeSpan = 1;
+		}
+
+		difficulty_type totalWork = cumulativeDifficulties[cutEnd - 1] - cumulativeDifficulties[cutBegin];
+		assert(totalWork > 0);
+
+		uint64_t low, high;
+		low = mul128(totalWork, m_difficultyTarget, &high);
+		if (high != 0 || low + timeSpan - 1 < low) {
+			return 0;
+		}
+
+		return (low + timeSpan - 1) / timeSpan;
+	}
 }
 
 bool Currency::checkProofOfWork(Crypto::cn_context& context, const Block& block, difficulty_type currentDiffic,
@@ -555,7 +634,9 @@ CurrencyBuilder::CurrencyBuilder(Logging::ILogger& log) : m_currency(log) {
   depositMaxTerm(parameters::DEPOSIT_MAX_TERM);
   depositMinTotalRateFactor(parameters::DEPOSIT_MIN_TOTAL_RATE_FACTOR);
   depositMaxTotalRate(parameters::DEPOSIT_MAX_TOTAL_RATE);
-
+  depositMaxTotalRate_v2(parameters::DEPOSIT_MAX_TOTAL_RATE_V2);
+  depositMaxTotalRateChangeHeight(parameters::DEPOSIT_MAX_TOTAL_RATE_CHANGE_HEIGHT);
+  
   maxBlockSizeInitial(parameters::MAX_BLOCK_SIZE_INITIAL);
   maxBlockSizeGrowthSpeedNumerator(parameters::MAX_BLOCK_SIZE_GROWTH_SPEED_NUMERATOR);
   maxBlockSizeGrowthSpeedDenominator(parameters::MAX_BLOCK_SIZE_GROWTH_SPEED_DENOMINATOR);
@@ -567,7 +648,9 @@ CurrencyBuilder::CurrencyBuilder(Logging::ILogger& log) : m_currency(log) {
   mempoolTxFromAltBlockLiveTime(parameters::CRYPTONOTE_MEMPOOL_TX_FROM_ALT_BLOCK_LIVETIME);
   numberOfPeriodsToForgetTxDeletedFromPool(parameters::CRYPTONOTE_NUMBER_OF_PERIODS_TO_FORGET_TX_DELETED_FROM_POOL);
 
-  upgradeHeight(parameters::UPGRADE_HEIGHT);
+  upgradeHeightV2(parameters::UPGRADE_HEIGHT_V2);
+  upgradeHeightV3(parameters::UPGRADE_HEIGHT_V3);
+  upgradeHeightV4(parameters::UPGRADE_HEIGHT_V4);
   upgradeVotingThreshold(parameters::UPGRADE_VOTING_THRESHOLD);
   upgradeVotingWindow(parameters::UPGRADE_VOTING_WINDOW);
   upgradeWindow(parameters::UPGRADE_WINDOW);

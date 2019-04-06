@@ -1,4 +1,4 @@
-## Building Bitcedi
+## Building Citadel
 
 ### On *nix:
 

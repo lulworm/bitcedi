@@ -604,12 +604,14 @@ DepositId WalletUserTransactionsCache::insertNewDeposit(const TransactionOutputI
   assert(depositOutput.term != 0);
   assert(m_transactionOutputToDepositIndex.find(std::tie(depositOutput.transactionHash, depositOutput.outputInTransaction)) == m_transactionOutputToDepositIndex.end());
 
+  WalletLegacyTransaction& transactionInfo = getTransaction(creatingTransactionId);
+
   Deposit deposit;
   deposit.amount = depositOutput.amount;
   deposit.creatingTransactionId = creatingTransactionId;
   deposit.term = depositOutput.term;
   deposit.spendingTransactionId = WALLET_LEGACY_INVALID_TRANSACTION_ID;
-  deposit.interest = currency.calculateInterest(deposit.amount, deposit.term);
+  deposit.interest = currency.calculateInterest(deposit.amount, deposit.term, transactionInfo.blockHeight);
   deposit.locked = true;
 
   return insertDeposit(deposit, depositOutput.outputInTransaction, depositOutput.transactionHash);

@@ -48,12 +48,15 @@ public:
   size_t difficultyLag() const { return m_difficultyLag; }
   size_t difficultyCut() const { return m_difficultyCut; }
   size_t difficultyBlocksCount() const { return m_difficultyWindow + m_difficultyLag; }
+  size_t difficultyBlocksCount2() const { return CryptoNote::parameters::DIFFICULTY_WINDOW_V2; }
 
   uint64_t depositMinAmount() const { return m_depositMinAmount; }
   uint32_t depositMinTerm() const { return m_depositMinTerm; }
   uint32_t depositMaxTerm() const { return m_depositMaxTerm; }
   uint64_t depositMinTotalRateFactor() const { return m_depositMinTotalRateFactor; }
   uint64_t depositMaxTotalRate() const { return m_depositMaxTotalRate; }
+  uint64_t depositMaxTotalRate_v2() const { return m_depositMaxTotalRate_v2; }
+  uint32_t depositMaxTotalRateChangeHeight() const { return m_depositMaxTotalRateChangeHeight; }
 
   size_t maxBlockSizeInitial() const { return m_maxBlockSizeInitial; }
   uint64_t maxBlockSizeGrowthSpeedNumerator() const { return m_maxBlockSizeGrowthSpeedNumerator; }
@@ -66,13 +69,13 @@ public:
   uint64_t mempoolTxFromAltBlockLiveTime() const { return m_mempoolTxFromAltBlockLiveTime; }
   uint64_t numberOfPeriodsToForgetTxDeletedFromPool() const { return m_numberOfPeriodsToForgetTxDeletedFromPool; }
 
-  uint64_t upgradeHeight() const { return m_upgradeHeight; }
+  uint32_t upgradeHeight(uint8_t majorVersion) const;
   unsigned int upgradeVotingThreshold() const { return m_upgradeVotingThreshold; }
-  size_t upgradeVotingWindow() const { return m_upgradeVotingWindow; }
-  size_t upgradeWindow() const { return m_upgradeWindow; }
-  size_t minNumberVotingBlocks() const { return (m_upgradeVotingWindow * m_upgradeVotingThreshold + 99) / 100; }
-  uint64_t maxUpgradeDistance() const { return static_cast<uint64_t>(m_upgradeWindow); }
-  uint64_t calculateUpgradeHeight(uint64_t voteCompleteHeight) const { return voteCompleteHeight + m_upgradeWindow; }
+  uint32_t upgradeVotingWindow() const { return m_upgradeVotingWindow; }
+  uint32_t upgradeWindow() const { return m_upgradeWindow; }
+  uint32_t minNumberVotingBlocks() const { return (m_upgradeVotingWindow * m_upgradeVotingThreshold + 99) / 100; }
+  uint32_t maxUpgradeDistance() const { return 7 * m_upgradeWindow; }
+  uint32_t calculateUpgradeHeight(uint32_t voteCompleteHeight) const { return voteCompleteHeight + m_upgradeWindow; }
 
   size_t fusionTxMaxSize() const { return m_fusionTxMaxSize; }
   size_t fusionTxMinInputCount() const { return m_fusionTxMinInputCount; }
@@ -91,12 +94,12 @@ public:
 
   bool getBlockReward(size_t medianSize, size_t currentBlockSize, uint64_t alreadyGeneratedCoins, uint64_t fee, uint32_t height,
   uint64_t& reward, int64_t& emissionChange) const;
-  uint64_t calculateInterest(uint64_t amount, uint32_t term) const;
-  uint64_t calculateTotalTransactionInterest(const Transaction& tx) const;
-  uint64_t getTransactionInputAmount(const TransactionInput& in) const;
-  uint64_t getTransactionAllInputsAmount(const Transaction& tx) const;
-  bool getTransactionFee(const Transaction& tx, uint64_t & fee) const;
-  uint64_t getTransactionFee(const Transaction& tx) const;
+  uint64_t calculateInterest(uint64_t amount, uint32_t term, uint32_t height) const;
+  uint64_t calculateTotalTransactionInterest(const Transaction& tx, uint32_t height) const;
+  uint64_t getTransactionInputAmount(const TransactionInput& in, uint32_t& height) const;
+  uint64_t getTransactionAllInputsAmount(const Transaction& tx, uint32_t& height) const;
+  bool getTransactionFee(const Transaction& tx, uint64_t & fee, uint32_t& height) const;
+  uint64_t getTransactionFee(const Transaction& tx, uint32_t height) const;
   size_t maxBlockCumulativeSize(uint64_t height) const;
 
   bool constructMinerTx(uint32_t height, size_t medianSize, uint64_t alreadyGeneratedCoins, size_t currentBlockSize,
@@ -117,7 +120,7 @@ public:
   std::string formatAmount(int64_t amount) const;
   bool parseAmount(const std::string& str, uint64_t& amount) const;
 
-  difficulty_type nextDifficulty(std::vector<uint64_t> timestamps, std::vector<difficulty_type> cumulativeDifficulties) const;
+  difficulty_type nextDifficulty(uint32_t height, uint8_t blockMajorVersion, std::vector<uint64_t> timestamps, std::vector<difficulty_type> cumulativeDifficulties) const;
   bool checkProofOfWork(Crypto::cn_context& context, const Block& block, difficulty_type currentDiffic, Crypto::Hash& proofOfWork) const;
 
   size_t getApproximateMaximumInputCount(size_t transactionSize, size_t outputCount, size_t mixinCount) const;
@@ -164,6 +167,8 @@ private:
   uint32_t m_depositMaxTerm;
   uint64_t m_depositMinTotalRateFactor;
   uint64_t m_depositMaxTotalRate;
+  uint64_t m_depositMaxTotalRate_v2;
+  uint32_t m_depositMaxTotalRateChangeHeight;
 
   size_t m_maxBlockSizeInitial;
   uint64_t m_maxBlockSizeGrowthSpeedNumerator;
@@ -176,10 +181,12 @@ private:
   uint64_t m_mempoolTxFromAltBlockLiveTime;
   uint64_t m_numberOfPeriodsToForgetTxDeletedFromPool;
 
-  uint64_t m_upgradeHeight;
+  uint32_t m_upgradeHeightV2;
+  uint32_t m_upgradeHeightV3;
+  uint32_t m_upgradeHeightV4;
   unsigned int m_upgradeVotingThreshold;
-  size_t m_upgradeVotingWindow;
-  size_t m_upgradeWindow;
+  uint32_t m_upgradeVotingWindow;
+  uint32_t m_upgradeWindow;
 
   size_t m_fusionTxMaxSize;
   size_t m_fusionTxMinInputCount;
@@ -249,6 +256,8 @@ public:
   CurrencyBuilder& depositMaxTerm(uint32_t val) { m_currency.m_depositMaxTerm = val; return *this; }
   CurrencyBuilder& depositMinTotalRateFactor(uint64_t val) { m_currency.m_depositMinTotalRateFactor = val; return *this; }
   CurrencyBuilder& depositMaxTotalRate(uint64_t val) { m_currency.m_depositMaxTotalRate = val; return *this; }
+  CurrencyBuilder& depositMaxTotalRate_v2(uint64_t val) { m_currency.m_depositMaxTotalRate_v2 = val; return *this; }
+  CurrencyBuilder& depositMaxTotalRateChangeHeight(uint32_t val) { m_currency.m_depositMaxTotalRateChangeHeight = val; return *this; }
 
   CurrencyBuilder& maxBlockSizeInitial(size_t val) { m_currency.m_maxBlockSizeInitial = val; return *this; }
   CurrencyBuilder& maxBlockSizeGrowthSpeedNumerator(uint64_t val) { m_currency.m_maxBlockSizeGrowthSpeedNumerator = val; return *this; }
@@ -261,7 +270,9 @@ public:
   CurrencyBuilder& mempoolTxFromAltBlockLiveTime(uint64_t val) { m_currency.m_mempoolTxFromAltBlockLiveTime = val; return *this; }
   CurrencyBuilder& numberOfPeriodsToForgetTxDeletedFromPool(uint64_t val) { m_currency.m_numberOfPeriodsToForgetTxDeletedFromPool = val; return *this; }
 
-  CurrencyBuilder& upgradeHeight(uint64_t val) { m_currency.m_upgradeHeight = val; return *this; }
+  CurrencyBuilder& upgradeHeightV2(uint64_t val) { m_currency.m_upgradeHeightV2 = val; return *this; }
+  CurrencyBuilder& upgradeHeightV3(uint64_t val) { m_currency.m_upgradeHeightV3 = val; return *this; }
+  CurrencyBuilder& upgradeHeightV4(uint64_t val) { m_currency.m_upgradeHeightV4 = val; return *this; }
   CurrencyBuilder& upgradeVotingThreshold(unsigned int val);
   CurrencyBuilder& upgradeVotingWindow(size_t val) { m_currency.m_upgradeVotingWindow = val; return *this; }
   CurrencyBuilder& upgradeWindow(size_t val);
