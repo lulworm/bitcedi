@@ -9,6 +9,7 @@
 
 #include <CryptoTypes.h>
 #include "generic-ops.h"
+#include "balloon.h"
 
 namespace Crypto {
 
@@ -50,6 +51,11 @@ namespace Crypto {
     (*cn_slow_hash_f)(context.data, data, length, reinterpret_cast<void *>(&hash), variant);
   }
 
+  inline void balloon_hash(const unsigned char* input, Hash &output, int length, const unsigned char* salt, int salt_length) {
+    balloon(input, reinterpret_cast<char *>(&output), length, salt, salt_length);
+  }
+
+
   inline void tree_hash(const Hash *hashes, size_t count, Hash &root_hash) {
     tree_hash(reinterpret_cast<const char (*)[HASH_SIZE]>(hashes), count, reinterpret_cast<char *>(&root_hash));
   }
@@ -61,6 +67,8 @@ namespace Crypto {
   inline void tree_hash_from_branch(const Hash *branch, size_t depth, const Hash &leaf, const void *path, Hash &root_hash) {
     tree_hash_from_branch(reinterpret_cast<const char (*)[HASH_SIZE]>(branch), depth, reinterpret_cast<const char *>(&leaf), path, reinterpret_cast<char *>(&root_hash));
   }
+
+
 
 }
 

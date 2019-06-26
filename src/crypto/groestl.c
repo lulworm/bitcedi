@@ -356,5 +356,5 @@ static int crypto_hash(unsigned char *out,
   groestl(in, 8*len, out);
   return 0;
 }
-
 */
+
