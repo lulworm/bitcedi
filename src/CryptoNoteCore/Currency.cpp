@@ -63,7 +63,7 @@ bool Currency::init() {
     m_upgradeHeightV2 = 0;
 	m_upgradeHeightV3 = 11;
 	m_upgradeHeightV4 = 40;
-        m_upgradeHeightV4 = 45;
+        m_upgradeHeightV5 = 45;
     m_blocksFileName = "testnet_" + m_blocksFileName;
     m_blocksCacheFileName = "testnet_" + m_blocksCacheFileName;
     m_blockIndexesFileName = "testnet_" + m_blockIndexesFileName;

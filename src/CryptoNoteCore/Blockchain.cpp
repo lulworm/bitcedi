@@ -315,7 +315,7 @@ m_checkpoints(logger),
 m_upgradeDetectorV2(currency, m_blocks, BLOCK_MAJOR_VERSION_2, logger),
 m_upgradeDetectorV3(currency, m_blocks, BLOCK_MAJOR_VERSION_3, logger),
 m_upgradeDetectorV4(currency, m_blocks, BLOCK_MAJOR_VERSION_4, logger),
-m_upgradeDetectorV4(currency, m_blocks, BLOCK_MAJOR_VERSION_5, logger) {
+m_upgradeDetectorV5(currency, m_blocks, BLOCK_MAJOR_VERSION_5, logger) {
 
   m_outputs.set_deleted_key(0);
   m_multisignatureOutputs.set_deleted_key(0);
@@ -714,7 +714,7 @@ difficulty_type Blockchain::difficultyAtHeight(uint64_t height) {
 uint8_t Blockchain::get_block_major_version_for_height(uint64_t height) const {
       if (height > m_upgradeDetectorV5.upgradeHeight()) {
     return m_upgradeDetectorV5.targetVersion();
-     else if (height > m_upgradeDetectorV4.upgradeHeight()) {
+    } else if (height > m_upgradeDetectorV4.upgradeHeight()) {
     return m_upgradeDetectorV4.targetVersion();
   } else if (height > m_upgradeDetectorV3.upgradeHeight()) {
     return m_upgradeDetectorV3.targetVersion();
