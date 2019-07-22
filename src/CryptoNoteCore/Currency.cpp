@@ -221,11 +221,15 @@ bool Currency::getTransactionFee(const Transaction& tx, uint64_t & fee, uint32_t
     amount_out += o.amount;
   }
 
-  if (amount_in < amount_out) {
-    return false;
+  if (amount_out > amount_in) {
+    if (tx.inputs.size() > 0 && tx.outputs.size() > 0 && amount_out > amount_in + parameters::MINIMUM_FEE) //take into account interest and assume that deposit txs always have min fee
+      fee = parameters::MINIMUM_FEE;
+    else
+      return false;
   }
+  else
+    fee = amount_in - amount_out;
 
-  fee = amount_in - amount_out;
   return true;
 }
 
