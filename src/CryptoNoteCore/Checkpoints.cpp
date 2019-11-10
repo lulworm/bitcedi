@@ -66,7 +66,7 @@ bool Checkpoints::is_alternative_block_allowed(uint32_t  blockchain_height,
   
      if (block_height < blockchain_height - CryptoNote::parameters::CRYPTONOTE_MINED_MONEY_UNLOCK_WINDOW)
   {
-    logger(Logging::ERROR, Logging::BRIGHT_WHITE)
+    logger(Logging::DEBUGGING, Logging::BRIGHT_WHITE)
       << "An attempt of too deep reorganization: "
       << blockchain_height - block_height << ", BLOCK REJECTED";
 
