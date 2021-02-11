@@ -218,7 +218,7 @@ namespace CryptoNote
     s(m_config.m_peer_id, "peer_id");
   }
 
-#define INVOKE_HANDLER(CMD, Handler) case CMD::ID: { ret = invokeAdaptor<CMD>(cmd.buf, out, ctx,  boost::bind(Handler, this, _1, _2, _3, _4)); break; }
+#define INVOKE_HANDLER(CMD, Handler) case CMD::ID: { ret = invokeAdaptor<CMD>(cmd.buf, out, ctx,  boost::bind(Handler, this, boost::arg<1>(), boost::arg<2>(), boost::arg<3>(), boost::arg<4>())); break; }
 
   int NodeServer::handleCommand(const LevinProtocol::Command& cmd, BinaryArray& out, P2pConnectionContext& ctx, bool& handled) {
     int ret = 0;
